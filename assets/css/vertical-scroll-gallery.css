@@ -36,6 +36,10 @@
     box-sizing: border-box;
 }
 
+.vsg-list-view-content .is-style-vertical-scroll-gallery{
+   gap: 2px !important;
+}
+
 /* CUSTOM SCROLLBAR */
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar {
     width: 8px;

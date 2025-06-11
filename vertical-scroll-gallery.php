@@ -83,7 +83,8 @@ function vsg_render_gallery_block_content($block_content, $block)
     // Only target the vertical scroll variation of the core/gallery block
     if (
         $block['blockName'] === 'core/gallery' &&
-        !empty($block['attrs']['verticalScroll'])
+        isset($block['attrs']['className']) &&
+        strpos($block['attrs']['className'], 'is-style-vertical-scroll-gallery') !== false
     ) {
         return '<div class="vsg-list-view vsg-list-view-padding scroll-container">
                     <div class="vsg-list-view-content mini-scroll-bar">'
