@@ -81,11 +81,67 @@ add_action('wp_enqueue_scripts', function () {
 function vsg_render_gallery_block_content($block_content, $block)
 {
     // Only target the vertical scroll variation of the core/gallery block
+
+
+    $inner_blocks = $block['innerBlocks'] ?? [];
+
+    if (!empty($inner_blocks)) {
+        $output = '';
+        foreach ($inner_blocks as $inner_block) {
+            if ($inner_block['blockName'] === 'core/image') {
+                $attrs = $inner_block['attrs'] ?? [];
+                $image_id = $attrs['id'] ?? null;
+                $image_size = $attrs['sizeSlug'] ?? 'large';
+
+                if (!$image_id) {
+                    continue;
+                }
+
+                $img_html = wp_get_attachment_image(
+                    $image_id,
+                    $image_size,
+                    false,
+                    array('class' => 'wp-image-' . $image_id)
+                );
+
+                if (!$img_html) {
+                    continue;
+                }
+
+                $output .= '<figure class="wp-block-image vsg-block-image size-' . esc_attr($image_size) . '">';
+                $output .= $img_html;
+
+                $caption = wp_get_attachment_caption($image_id);
+                if ($caption) {
+                    $output .= '<figcaption>' . esc_html($caption) . '</figcaption>';
+                }
+
+                $output .= '</figure>';
+            }
+        }
+        return $output;
+    } 
+
     if (
         $block['blockName'] === 'core/gallery' &&
         isset($block['attrs']['className']) &&
         strpos($block['attrs']['className'], 'is-style-vertical-scroll-gallery') !== false
     ) {
+
+         // Get display mode (default to scroll for backward compatibility)
+        $display_mode = $block['attrs']['displayMode'] ?? 'scroll';
+        
+        // if ($display_mode === 'scroll') {
+        //     // Existing scroll behavior
+        //     return '<div class="vsg-list-view vsg-list-view-padding scroll-container">
+        //                 <div class="vsg-list-view-content mini-scroll-bar">'
+        //         . $block_content .
+        //         '</div>
+        //         </div>';
+        // } else {
+  
+        // }
+
         return '<div class="vsg-list-view vsg-list-view-padding scroll-container">
                     <div class="vsg-list-view-content mini-scroll-bar">'
             . $block_content .

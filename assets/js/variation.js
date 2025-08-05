@@ -11,6 +11,7 @@ wp.domReady(() => {
         className: "is-style-vertical-scroll-gallery",
         linkTO: "none",
         columns: 1,
+        displayMode: "individual",
       },
       scope: ["block", "inserter"], // Where this variation appears
       isActive: (blockAttributes) => {

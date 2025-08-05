@@ -1,58 +1,61 @@
 /* OUTERMOST CONTAINER */
 .vsg-list-view {
-    position: relative;
-    overflow: hidden;
-    border: 1px solid #ccc;
-    padding: 2px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #ccc;
+  padding: 2px;
+}
+
+.vsg-block-image {
+  padding: 8px 0;
 }
 
 /* Aspect-ratio padding helper */
 .vsg-list-view-padding {
-    padding-bottom: 140%;
-    max-height: none !important;
-    height: auto !important;
+  padding-bottom: 140%;
+  max-height: none !important;
+  height: auto !important;
 }
 
 @media screen and (min-width: 768px) {
-    .vsg-list-view-padding {
-        padding-bottom: 99%;
-    }
+  .vsg-list-view-padding {
+    padding-bottom: 99%;
+  }
 }
 
 @media screen and (min-width: 480px) and (max-width: 767px) {
-    .vsg-list-view-padding {
-        padding-bottom: 120%;
-    }
+  .vsg-list-view-padding {
+    padding-bottom: 120%;
+  }
 }
 
 /* SCROLLABLE INNER CONTAINER */
 .vsg-list-view-content {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow-y: scroll;
-    box-sizing: border-box;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: scroll;
+  box-sizing: border-box;
 }
 
-.vsg-list-view-content .is-style-vertical-scroll-gallery{
-   gap: 2px !important;
+.vsg-list-view-content .is-style-vertical-scroll-gallery {
+  gap: 2px !important;
 }
 
 /* CUSTOM SCROLLBAR */
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar {
-    width: 8px;
+  width: 8px;
 }
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar-track {
-    background: #f0f0f0;
-    border-radius: 4px;
+  background: #f0f0f0;
+  border-radius: 4px;
 }
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar-thumb {
-    background: #cccccc;
-    border-radius: 4px;
+  background: #cccccc;
+  border-radius: 4px;
 }
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar-thumb:hover {
-    background: #aaaaaa;
+  background: #aaaaaa;
 }
-
