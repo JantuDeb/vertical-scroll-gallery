@@ -49,6 +49,7 @@ function vsg_register_settings()
             'sanitize_callback' => 'vsg_sanitize_settings',
             'default' => [
                 'override_default_gallery' => 0,
+                'override_display_mode' => 'scroll',
             ],
         ]
     );
@@ -67,10 +68,18 @@ function vsg_register_settings()
         'vsg-settings',
         'vsg_general_section'
     );
+
+    add_settings_field(
+        'vsg_override_display_mode',
+        __('Override Display Mode', 'vertical-scroll-gallery'),
+        'vsg_render_override_display_mode_field',
+        'vsg-settings',
+        'vsg_general_section'
+    );
 }
 add_action('admin_init', 'vsg_register_settings');
 
-// Render the field
+// Render the override gallery field
 function vsg_render_override_gallery_field()
 {
     $options = get_option('vsg_settings');
@@ -83,10 +92,31 @@ function vsg_render_override_gallery_field()
     <?php
 }
 
+// Render the override display mode field
+function vsg_render_override_display_mode_field()
+{
+    $options = get_option('vsg_settings');
+    $display_mode = $options['override_display_mode'] ?? 'scroll';
+    ?>
+    <select name="vsg_settings[override_display_mode]">
+        <option value="scroll" <?php selected('scroll', $display_mode); ?>>
+            <?php _e('Scroll', 'vertical-scroll-gallery'); ?>
+        </option>
+        <option value="individual" <?php selected('individual', $display_mode); ?>>
+            <?php _e('Individual', 'vertical-scroll-gallery'); ?>
+        </option>
+    </select>
+    <p class="description">
+        <?php _e('Default display mode when override is enabled.', 'vertical-scroll-gallery'); ?>
+    </p>
+    <?php
+}
+
 // Sanitize the settings
 function vsg_sanitize_settings($input)
 {
     $sanitized_input = [];
     $sanitized_input['override_default_gallery'] = isset($input['override_default_gallery']) ? 1 : 0;
+    $sanitized_input['override_display_mode'] = in_array($input['override_display_mode'] ?? 'scroll', ['scroll', 'individual']) ? $input['override_display_mode'] : 'scroll';
     return $sanitized_input;
 }

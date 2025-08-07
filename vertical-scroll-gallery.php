@@ -34,23 +34,20 @@ function vsg_register_block_assets()
         true
     );
 
-    // Register the frontend style
-    wp_register_style(
-        'vsg-frontend-style',
-        plugin_dir_url(__FILE__) . 'build/style-index.css',
-        array(),
-        $asset_file['version']
-    );
-
     // Enqueue the editor script
     add_action('enqueue_block_editor_assets', function () {
         wp_enqueue_script('vsg-editor-script');
     });
 
-    // Enqueue the frontend style
-    add_action('wp_enqueue_scripts', function () {
-        wp_enqueue_style('vsg-frontend-style');
-    });
+    // Register frontend style for the block
+    wp_enqueue_block_style(
+        'core/gallery', // or your custom block name, e.g., 'vsg/my-block'
+        array(
+            'handle' => 'vsg-frontend-style',
+            'src'    => plugin_dir_url(__FILE__) . 'build/style-index.css',
+            'ver'    => $asset_file['version']
+        )
+    );
 }
 add_action('init', 'vsg_register_block_assets');
 
@@ -74,29 +71,37 @@ function vsg_render_gallery_block_content($block_content, $block)
 
     $options = get_option('vsg_settings');
     $override_default = $options['override_default_gallery'] ?? 0;
+    $override_display_mode = $options['override_display_mode'] ?? 'scroll';
     $is_vsg_variation = isset($block['attrs']['className']) && strpos($block['attrs']['className'], 'is-style-vertical-scroll-gallery') !== false;
 
-    // Determine if we should apply the vertical scroll effect
-    $apply_effect = $override_default || $is_vsg_variation;
+    // Get display mode from block attributes or use override setting
+    $display_mode = $block['attrs']['displayMode'] ?? ($override_default ? $override_display_mode : 'default');
 
-    if (!$apply_effect) {
+    // Initial check: if no override and displayMode is default, return original content
+    if (!$override_default && !$is_vsg_variation) {
         return $block_content;
     }
 
-    // Get display mode. Default to 'scroll' if the override is on but the attribute is not set.
-    $display_mode = $block['attrs']['displayMode'] ?? 'scroll';
+    if ($display_mode === 'default') {
+        return $block_content;
+    }
 
     // Reconstruct the gallery from inner blocks for consistency
     $inner_html = '';
     if (!empty($block['innerBlocks'])) {
         foreach ($block['innerBlocks'] as $inner_block) {
+            // Add vsg-block-image class to each inner block
+            if (!isset($inner_block['attrs']['className'])) {
+                $inner_block['attrs']['className'] = '';
+            }
+            $inner_block['attrs']['className'] = trim($inner_block['attrs']['className'] . ' vsg-block-image');
+            
             $inner_html .= render_block($inner_block);
         }
     } else {
         // Fallback for galleries without inner blocks (older WordPress versions)
         $inner_html = $block_content;
     }
-
 
     if ($display_mode === 'scroll') {
         return '<div class="vsg-list-view vsg-list-view-padding scroll-container">
