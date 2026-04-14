@@ -2,7 +2,7 @@ import { registerBlockVariation } from "@wordpress/blocks";
 import { addFilter } from "@wordpress/hooks";
 import { createHigherOrderComponent } from "@wordpress/compose";
 import { InspectorControls } from "@wordpress/block-editor";
-import { PanelBody, SelectControl } from "@wordpress/components";
+import { PanelBody, SelectControl, Notice } from "@wordpress/components";
 import { __ } from "@wordpress/i18n";
 import "./style.scss";
 
@@ -67,6 +67,14 @@ const addInspectorControls = (BlockEdit) => {
                   "vertical-scroll-gallery"
                 )}
               />
+              {displayMode !== "default" && (
+                <Notice status="info" isDismissible={false}>
+                  {__(
+                    "The Columns setting above has no effect in Scroll or Individual mode — images always render in a single vertical stack on the frontend.",
+                    "vertical-scroll-gallery"
+                  )}
+                </Notice>
+              )}
             </PanelBody>
           </InspectorControls>
         </>

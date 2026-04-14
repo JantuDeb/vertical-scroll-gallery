@@ -39,86 +39,94 @@ function vsg_register_block_assets()
         wp_enqueue_script('vsg-editor-script');
     });
 
-    // Register frontend style for the block
-    wp_enqueue_block_style(
-        'core/gallery', // or your custom block name, e.g., 'vsg/my-block'
-        array(
-            'handle' => 'vsg-frontend-style',
-            'src'    => plugin_dir_url(__FILE__) . 'build/style-index.css',
-            'ver'    => $asset_file['version']
-        )
+    // Register frontend style. We enqueue it on demand from the render path
+    // so it only loads on pages that actually use the vertical-scroll variation.
+    wp_register_style(
+        'vsg-frontend-style',
+        plugin_dir_url(__FILE__) . 'build/style-index.css',
+        array(),
+        $asset_file['version']
     );
 }
 add_action('init', 'vsg_register_block_assets');
+
+/**
+ * Register the `displayMode` attribute on core/gallery server-side so the
+ * selected value persists across save/reload in the block editor.
+ */
+function vsg_register_gallery_attributes($args, $block_type)
+{
+    if ($block_type !== 'core/gallery') {
+        return $args;
+    }
+
+    if (!isset($args['attributes']) || !is_array($args['attributes'])) {
+        $args['attributes'] = array();
+    }
+
+    $args['attributes']['displayMode'] = array(
+        'type'    => 'string',
+        'default' => 'default',
+    );
+
+    return $args;
+}
+add_filter('register_block_type_args', 'vsg_register_gallery_attributes', 10, 2);
 
 
 
 
 /**
- * Custom render callback for the core/gallery block.
- * This function modifies the content *inside* the WordPress-generated gallery wrapper.
+ * Short-circuit core/gallery rendering for the vertical-scroll variation (or
+ * when the global override is enabled). By returning non-null from
+ * `pre_render_block`, WordPress skips core's gallery render callback entirely,
+ * so inner images are rendered exactly once instead of twice.
  *
- * @param string $block_content The default block content (already rendered HTML by WordPress).
- * @param array  $block         The full block object, including attributes and inner blocks.
- * @return string               The modified or default block content.
+ * @param string|null $pre_render  Current pre-render value (null means proceed).
+ * @param array       $block       Parsed block (innerBlocks already populated).
+ * @return string|null             HTML to use, or null to let core render normally.
  */
-
-function vsg_render_gallery_block_content($block_content, $block)
+function vsg_pre_render_gallery_block($pre_render, $block)
 {
-    if ($block['blockName'] !== 'core/gallery') {
-        return $block_content;
+    if ($pre_render !== null || ($block['blockName'] ?? '') !== 'core/gallery') {
+        return $pre_render;
     }
 
-    $options = get_option('vsg_settings');
-    $override_default = $options['override_default_gallery'] ?? 0;
-    $override_display_mode = $options['override_display_mode'] ?? 'scroll';
-    $is_vsg_variation = isset($block['attrs']['className']) && strpos($block['attrs']['className'], 'is-style-vertical-scroll-gallery') !== false;
+    static $options_cache = null;
+    if ($options_cache === null) {
+        $options_cache = get_option('vsg_settings', []);
+    }
 
-    // Get display mode from block attributes or use override setting
+    $override_default      = !empty($options_cache['override_default_gallery']);
+    $override_display_mode = $options_cache['override_display_mode'] ?? 'scroll';
+
     $display_mode = $block['attrs']['displayMode'] ?? ($override_default ? $override_display_mode : 'default');
 
-    // Initial check: if no override and displayMode is default, return original content
-    if (!$override_default && !$is_vsg_variation) {
-        return $block_content;
-    }
-
     if ($display_mode === 'default') {
-        return $block_content;
+        return $pre_render;
     }
 
-    // Reconstruct the gallery from inner blocks for consistency
+    if (empty($block['innerBlocks'])) {
+        return $pre_render;
+    }
+
+    wp_enqueue_style('vsg-frontend-style');
+
     $inner_html = '';
-    if (!empty($block['innerBlocks'])) {
-        foreach ($block['innerBlocks'] as $inner_block) {
-            // Add vsg-block-image class to each inner block
-            if (!isset($inner_block['attrs']['className'])) {
-                $inner_block['attrs']['className'] = '';
-            }
-            $inner_block['attrs']['className'] = trim($inner_block['attrs']['className'] . ' vsg-block-image');
-            
-            $inner_html .= render_block($inner_block);
-        }
-    } else {
-        // Fallback for galleries without inner blocks (older WordPress versions)
-        $inner_html = $block_content;
+    foreach ($block['innerBlocks'] as $inner_block) {
+        $inner_html .= render_block($inner_block);
     }
 
     if ($display_mode === 'scroll') {
-        return '<div class="vsg-list-view vsg-list-view-padding scroll-container">
-                    <div class="vsg-list-view-content mini-scroll-bar">'
-            . $inner_html .
-            '</div>
-                </div>';
-    } else {
-        // 'individual' mode - return the reconstructed content without the scroll wrapper
-        return $inner_html;
+        return '<div class="vsg-list-view vsg-list-view-padding scroll-container">'
+             . '<div class="vsg-list-view-content mini-scroll-bar">'
+             . $inner_html
+             . '</div></div>';
     }
+
+    return $inner_html;
 }
-
-
-// The filter 'render_block_core/gallery' passes the PRE-RENDERED HTML content.
-// To replace it, we simply return our new HTML.
-add_filter('render_block_core/gallery', 'vsg_render_gallery_block_content', 10, 2);
+add_filter('pre_render_block', 'vsg_pre_render_gallery_block', 10, 2);
 
 // Include admin settings
 if (is_admin()) {
