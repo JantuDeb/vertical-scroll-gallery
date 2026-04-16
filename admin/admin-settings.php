@@ -89,6 +89,9 @@ function vsg_render_override_gallery_field()
         <input type="checkbox" name="vsg_settings[override_default_gallery]" value="1" <?php checked(1, $override); ?> />
         <?php _e('Apply vertical scroll effect to all core/gallery blocks by default.', 'vertical-scroll-gallery'); ?>
     </label>
+    <p class="description">
+        <?php _e('Note: If a gallery block has its own display mode set in the editor, that setting will take priority over this global override.', 'vertical-scroll-gallery'); ?>
+    </p>
     <?php
 }
 
@@ -107,7 +110,7 @@ function vsg_render_override_display_mode_field()
         </option>
     </select>
     <p class="description">
-        <?php _e('Default display mode when override is enabled.', 'vertical-scroll-gallery'); ?>
+        <?php _e('Default display mode when override is enabled. This applies only to gallery blocks that do not have a display mode explicitly set in the block editor.', 'vertical-scroll-gallery'); ?>
     </p>
     <?php
 }

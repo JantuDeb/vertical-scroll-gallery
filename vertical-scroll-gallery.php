@@ -4,7 +4,7 @@
  * Plugin Name:       Vertical Scroll Gallery Variation
  * Plugin URI:        https://thestudypath.com/vertical-scroll-gallery
  * Description:       Adds a "Vertical Scroll Image List" variation to the core/gallery block with a vertically scrollable layout.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Author:            Jantu
  * Author URI:        https://thestudypath.com
  * License:           GPL-2.0-or-later
