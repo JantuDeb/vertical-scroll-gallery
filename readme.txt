@@ -2,9 +2,9 @@
 Contributors:      Jantu
 Donate link:       https://thestudypath.com
 Tags:              gallery, image, scroll, vertical, block, variation
-Requires at least: 5.8
+Requires at least: 6.5
 Tested up to:      6.8
-Stable tag:        1.0.2
+Stable tag:        1.0.3
 License:           GPLv2 or later
 License URI:       https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -47,6 +47,9 @@ The block editor will allow you to select the variation, but it may not show a l
 <!-- 2. Frontend - Example of the gallery rendered in the scrollable container. -->
 
 == Changelog ==
+
+= 1.0.3 =
+* Added priority note in admin settings explaining that individual block settings override global defaults.
 
 = 1.0.2 =
 * Refined PHP render callback to ensure correct image attributes (width, height, data-id, fetchpriority).
