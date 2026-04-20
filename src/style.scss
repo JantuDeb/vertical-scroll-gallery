@@ -68,3 +68,9 @@
 .vsg-list-view-content.mini-scroll-bar::-webkit-scrollbar-thumb:hover {
   background: #aaaaaa;
 }
+
+.vsg-individual-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}

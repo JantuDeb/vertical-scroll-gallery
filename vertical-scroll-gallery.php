@@ -124,6 +124,10 @@ function vsg_pre_render_gallery_block($pre_render, $block)
              . '</div></div>';
     }
 
+    if ($display_mode === 'individual') {
+        return '<figure class="vsg-individual-view">' . $inner_html . '</figure>';
+    }
+
     return $inner_html;
 }
 add_filter('pre_render_block', 'vsg_pre_render_gallery_block', 10, 2);
