@@ -87,7 +87,7 @@ function vsg_render_override_gallery_field()
     ?>
     <label>
         <input type="checkbox" name="vsg_settings[override_default_gallery]" value="1" <?php checked(1, $override); ?> />
-        <?php _e('Apply vertical scroll effect to all core/gallery blocks by default.', 'vertical-scroll-gallery'); ?>
+        <?php _e('Apply the selected layout to galleries without an individual display mode.', 'vertical-scroll-gallery'); ?>
     </label>
     <p class="description">
         <?php _e('Note: If a gallery block has its own display mode set in the editor, that setting will take priority over this global override.', 'vertical-scroll-gallery'); ?>
@@ -118,8 +118,9 @@ function vsg_render_override_display_mode_field()
 // Sanitize the settings
 function vsg_sanitize_settings($input)
 {
+    $input = is_array($input) ? $input : [];
     $sanitized_input = [];
-    $sanitized_input['override_default_gallery'] = isset($input['override_default_gallery']) ? 1 : 0;
-    $sanitized_input['override_display_mode'] = in_array($input['override_display_mode'] ?? 'scroll', ['scroll', 'individual']) ? $input['override_display_mode'] : 'scroll';
+    $sanitized_input['override_default_gallery'] = !empty($input['override_default_gallery']) ? 1 : 0;
+    $sanitized_input['override_display_mode'] = in_array($input['override_display_mode'] ?? 'scroll', ['scroll', 'individual'], true) ? ($input['override_display_mode'] ?? 'scroll') : 'scroll';
     return $sanitized_input;
 }

@@ -1,138 +1,104 @@
 <?php
-
 /**
  * Plugin Name:       Vertical Scroll Gallery Variation
- * Plugin URI:        https://thestudypath.com/vertical-scroll-gallery
- * Description:       Adds a "Vertical Scroll Image List" variation to the core/gallery block with a vertically scrollable layout.
- * Version:           1.0.3
+ * Plugin URI:        https://github.com/JantuDeb/vertical-scroll-gallery
+ * Description:       Adds scrollable and full-size vertical layouts to the native Gallery block without rebuilding images.
+ * Version:           1.0.5
+ * Requires at least: 6.5
+ * Requires PHP:      7.4
  * Author:            Jantu
  * Author URI:        https://thestudypath.com
  * License:           GPL-2.0-or-later
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       vertical-scroll-gallery
- * Domain Path:       /languages
  */
-
-
-if (! defined('ABSPATH')) {
-    exit; // Exit if accessed directly.
+if (!defined('ABSPATH')) {
+    exit;
 }
 
-/**
- * Register the block assets.
- */
-function vsg_register_block_assets()
-{
-    $asset_file = include(plugin_dir_path(__FILE__) . 'build/index.asset.php');
-
-    // Register the block editor script
-    wp_register_script(
-        'vsg-editor-script',
-        plugin_dir_url(__FILE__) . 'build/index.js',
-        $asset_file['dependencies'],
-        $asset_file['version'],
-        true
-    );
-
-    // Enqueue the editor script
-    add_action('enqueue_block_editor_assets', function () {
-        wp_enqueue_script('vsg-editor-script');
-    });
-
-    // Register frontend style. We enqueue it on demand from the render path
-    // so it only loads on pages that actually use the vertical-scroll variation.
-    wp_register_style(
-        'vsg-frontend-style',
-        plugin_dir_url(__FILE__) . 'build/style-index.css',
-        array(),
-        $asset_file['version']
-    );
+function vsg_register_block_assets() {
+    $asset_path = plugin_dir_path(__FILE__) . 'build/index.asset.php';
+    if (file_exists($asset_path) && file_exists(plugin_dir_path(__FILE__) . 'build/index.js')) {
+        $asset = require $asset_path;
+        wp_register_script('vsg-editor-script', plugin_dir_url(__FILE__) . 'build/index.js', $asset['dependencies'], $asset['version'], true);
+        add_action('enqueue_block_editor_assets', function () {
+            wp_enqueue_script('vsg-editor-script');
+            wp_add_inline_script('vsg-editor-script', 'window.vsgEditorSettings = ' . wp_json_encode(array('mode' => vsg_get_display_mode(array()))) . ';', 'before');
+        });
+    } else {
+        add_action('admin_notices', function () {
+            if (current_user_can('manage_options')) {
+                echo '<div class="notice notice-error"><p>' . esc_html__('Vertical Scroll Gallery: build assets are missing. Install the release ZIP, or run npm ci and npm run build before packaging.', 'vertical-scroll-gallery') . '</p></div>';
+            }
+        });
+    }
+    $style_path = plugin_dir_path(__FILE__) . 'build/style-index.css';
+    if (file_exists($style_path)) {
+        // Core handles late rendering, editor styles, RTL and optional CSS inlining.
+        wp_enqueue_block_style('core/gallery', array(
+            'handle' => 'vsg-frontend-style',
+            'src' => plugin_dir_url(__FILE__) . 'build/style-index.css',
+            'path' => $style_path,
+            'ver' => '1.0.5',
+        ));
+    }
 }
 add_action('init', 'vsg_register_block_assets');
 
-/**
- * Register the `displayMode` attribute on core/gallery server-side so the
- * selected value persists across save/reload in the block editor.
- */
-function vsg_register_gallery_attributes($args, $block_type)
-{
-    if ($block_type !== 'core/gallery') {
-        return $args;
+function vsg_register_gallery_attributes($args, $block_type) {
+    if ($block_type === 'core/gallery') {
+        $args['attributes']['displayMode'] = array(
+            'type' => 'string',
+            'enum' => array('inherit', 'default', 'scroll', 'individual'),
+            'default' => 'inherit',
+        );
     }
-
-    if (!isset($args['attributes']) || !is_array($args['attributes'])) {
-        $args['attributes'] = array();
-    }
-
-    $args['attributes']['displayMode'] = array(
-        'type'    => 'string',
-        'default' => 'default',
-    );
-
     return $args;
 }
 add_filter('register_block_type_args', 'vsg_register_gallery_attributes', 10, 2);
 
-
-
-
-/**
- * Short-circuit core/gallery rendering for the vertical-scroll variation (or
- * when the global override is enabled). By returning non-null from
- * `pre_render_block`, WordPress skips core's gallery render callback entirely,
- * so inner images are rendered exactly once instead of twice.
- *
- * @param string|null $pre_render  Current pre-render value (null means proceed).
- * @param array       $block       Parsed block (innerBlocks already populated).
- * @return string|null             HTML to use, or null to let core render normally.
- */
-function vsg_pre_render_gallery_block($pre_render, $block)
-{
-    if ($pre_render !== null || ($block['blockName'] ?? '') !== 'core/gallery') {
-        return $pre_render;
+/** Explicit WordPress mode must persist even when a global override is enabled. */
+function vsg_get_display_mode($attributes) {
+    $mode = $attributes['displayMode'] ?? 'inherit';
+    if ($mode !== 'inherit') {
+        return in_array($mode, array('default', 'scroll', 'individual'), true) ? $mode : 'default';
     }
-
-    static $options_cache = null;
-    if ($options_cache === null) {
-        $options_cache = get_option('vsg_settings', []);
+    $classes = preg_split('/\s+/', trim($attributes['className'] ?? ''));
+    if (in_array('is-style-vertical-scroll-gallery', $classes, true)) {
+        return 'scroll';
     }
-
-    $override_default      = !empty($options_cache['override_default_gallery']);
-    $override_display_mode = $options_cache['override_display_mode'] ?? 'scroll';
-
-    $display_mode = $block['attrs']['displayMode'] ?? ($override_default ? $override_display_mode : 'default');
-
-    if ($display_mode === 'default') {
-        return $pre_render;
+    // get_option is already cached by WordPress; do not cache stale values here.
+    $options = get_option('vsg_settings', array());
+    if (!is_array($options) || empty($options['override_default_gallery'])) {
+        return 'default';
     }
-
-    if (empty($block['innerBlocks'])) {
-        return $pre_render;
-    }
-
-    wp_enqueue_style('vsg-frontend-style');
-
-    $inner_html = '';
-    foreach ($block['innerBlocks'] as $inner_block) {
-        $inner_html .= render_block($inner_block);
-    }
-
-    if ($display_mode === 'scroll') {
-        return '<div class="vsg-list-view vsg-list-view-padding scroll-container">'
-             . '<div class="vsg-list-view-content mini-scroll-bar">'
-             . $inner_html
-             . '</div></div>';
-    }
-
-    if ($display_mode === 'individual') {
-        return '<figure class="vsg-individual-view">' . $inner_html . '</figure>';
-    }
-
-    return $inner_html;
+    return in_array($options['override_display_mode'] ?? '', array('scroll', 'individual'), true)
+        ? $options['override_display_mode'] : 'scroll';
 }
-add_filter('pre_render_block', 'vsg_pre_render_gallery_block', 10, 2);
 
-// Include admin settings
+/** Modify the existing wrapper only; core and other plugins render images once. */
+function vsg_render_gallery_block_content($content, $block) {
+    $mode = vsg_get_display_mode($block['attrs'] ?? array());
+    if ($mode === 'default' || trim($content) === '') {
+        return $content;
+    }
+    $html = new WP_HTML_Tag_Processor($content);
+    if (!$html->next_tag(array('class_name' => 'wp-block-gallery'))) {
+        return $content;
+    }
+    $html->add_class('vsg-gallery');
+    $html->add_class($mode === 'scroll' ? 'vsg-list-view' : 'vsg-individual-view');
+    if ($mode === 'scroll') {
+        $html->set_attribute('tabindex', '0');
+        $html->set_attribute('role', 'region');
+        // Retain an author's accessible name if one was already supplied.
+        if (!$html->get_attribute('aria-label') && !$html->get_attribute('aria-labelledby')) {
+            $html->set_attribute('aria-label', __('Scrollable image gallery', 'vertical-scroll-gallery'));
+        }
+    }
+    return $html->get_updated_html();
+}
+add_filter('render_block_core/gallery', 'vsg_render_gallery_block_content', 10, 2);
+
 if (is_admin()) {
     require_once plugin_dir_path(__FILE__) . 'admin/admin-settings.php';
 }

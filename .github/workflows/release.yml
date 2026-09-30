@@ -1,43 +1,30 @@
 name: Build and Release
-
 on:
   push:
-    branches:
-      - master
-
+    branches: [master]
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '18'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build plugin
-        run: npm run build
-
-      - name: Create release zip
-        run: |
-          mkdir -p vertical-scroll-gallery
-          cp -R build vertical-scroll-gallery/
-          cp -R *.php vertical-scroll-gallery/
-          cp -R readme.txt vertical-scroll-gallery/
-          zip -r vertical-scroll-gallery.zip vertical-scroll-gallery
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/checkout@v4
         with:
-          files: vertical-scroll-gallery.zip
-          tag_name: ${{ github.run_number }}
-          release_name: "Release ${{ github.run_number }}"
+          repository: WordPress/WordPress
+          ref: '6.5'
+          path: tests/wordpress
+      - run: npm test
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WP_CORE_DIR: ${{ github.workspace }}/tests/wordpress
+      - run: npm run package
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}

@@ -1,91 +1,50 @@
-# CLAUDE.md
+# Project guidance
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This WordPress plugin extends core/gallery through a block variation. It adds
+scroll and individual vertical layouts while preserving WordPress image rendering.
 
-## Project Overview
+## Commands
 
-This is a WordPress plugin that extends the core WordPress Gallery block (`core/gallery`) by adding a "Vertical Scroll Image List" variation. The plugin creates a custom scrollable container for displaying images in a compact, vertically scrollable format.
-
-## Development Commands
-
-- `npm run build` - Build the plugin for production using @wordpress/scripts
-- `npm run start` - Start development mode with watch/hot reload using @wordpress/scripts
+- npm ci: install the locked build dependencies.
+- npm run build: compile editor JS and frontend SCSS into build/.
+- npm run start: watch source changes.
+- WP_CORE_DIR=/path/to/WordPress npm test: run PHP regression tests with the real
+  WordPress HTML parser and isolated option/hook stubs; no database required.
+- npm run package: build and verify a release ZIP in dist/.
 
 ## Architecture
 
-### Core Components
+- vertical-scroll-gallery.php registers attributes/assets and modifies only the
+  existing gallery wrapper with WP_HTML_Tag_Processor in render_block_core/gallery.
+- src/index.js adds editor controls, an editor-only vertical preview, and the
+  Vertical Scroll Image List variation. Never change core Gallery saved markup.
+- src/style.scss contains scoped vertical/scroll styles, responsive CSS height,
+  accessible focus and print overrides. Frontend JavaScript is unnecessary.
+- admin/admin-settings.php exposes global defaults in option vsg_settings.
+- scripts/package.py verifies that runtime PHP, admin/ and build/ are included.
 
-**Main Plugin File**: `vertical-scroll-gallery.php`
-- Registers block assets and handles frontend rendering
-- Contains the main render callback `vsg_render_gallery_block_content()` that filters the `core/gallery` block output
-- Conditionally applies vertical scroll styling based on block attributes or admin settings
-- Includes admin settings functionality
+## Display preferences
 
-**Block Editor Integration**: `src/index.js`
-- Registers a block variation for `core/gallery` called "Vertical Scroll Image List"
-- Extends gallery block attributes with `displayMode` (scroll/individual/default)
-- Adds custom inspector controls in the block editor sidebar
-- Uses WordPress hooks and filters to modify the gallery block behavior
+The displayMode attribute supports inherit (default), default (explicit WordPress
+layout), scroll, and individual. Explicit preferences win over global settings.
+An inherited legacy is-style-vertical-scroll-gallery class selects scroll mode.
+Unmarked galleries inherit the global override if enabled, otherwise core layout.
+Using inherit as the attribute default ensures an explicit default value survives
+WordPress serialization. Match variation classes as whole class names.
 
-**Frontend Styling**: `src/style.scss`
-- Provides responsive CSS for the scrollable container (`.vsg-list-view`)
-- Includes custom scrollbar styling and aspect-ratio-based responsive design
-- Handles different viewport breakpoints (mobile, tablet, desktop)
+## Rendering and assets
 
-**Admin Settings**: `admin/admin-settings.php`
-- Creates WordPress admin options page under Settings
-- Allows global override of default gallery behavior
-- Provides checkbox to apply vertical scroll to all gallery blocks by default
+Let core and other plugins render every image once. Never rebuild attachment HTML,
+strip gallery anchors/classes/alignment/styles, or use pre_render_block to bypass
+core image/lightbox behavior. Preserve legacy gallery and externally hosted images.
+Use wp_enqueue_block_style for frontend/editor CSS. The theme controls on-demand
+loading. Missing build assets must show an admin notice instead of a fatal error.
 
-### Build Process
+## Safe testing and releases
 
-The plugin uses `@wordpress/scripts` for building:
-- Source files in `src/` are compiled to `build/`
-- CSS is compiled from SCSS and includes RTL support
-- Asset dependencies are automatically managed via `build/index.asset.php`
-
-### Block Variation System
-
-The plugin uses WordPress block variations rather than creating a new block:
-- Safer approach that leverages core gallery functionality
-- Maintains compatibility with WordPress updates
-- Uses `className: "is-style-vertical-scroll-gallery"` to identify the variation
-- Filter `render_block_core/gallery` intercepts and modifies gallery output
-
-### Display Modes
-
-Three display modes are supported via the `displayMode` attribute:
-- `scroll`: Wraps content in scrollable container
-- `individual`: Returns gallery content without scroll wrapper
-- `default`: Uses WordPress default rendering
-
-### Frontend Rendering Logic
-
-1. Check if block is `core/gallery`
-2. Check admin setting `override_default_gallery` OR presence of `is-style-vertical-scroll-gallery` class
-3. If conditions met, reconstruct gallery HTML from inner blocks
-4. Apply appropriate wrapper based on `displayMode` attribute
-5. Return modified HTML or fallback to default content
-
-## Plugin Structure
-
-```
-├── vertical-scroll-gallery.php  # Main plugin file
-├── src/
-│   ├── index.js                # Block editor JavaScript
-│   └── style.scss              # Frontend styles
-├── admin/
-│   └── admin-settings.php      # WordPress admin page
-├── build/                      # Compiled assets (generated)
-├── package.json                # NPM configuration
-└── readme.txt                  # WordPress plugin readme
-```
-
-## Development Notes
-
-- The plugin modifies core WordPress gallery blocks, not custom blocks
-- Uses WordPress hooks system extensively (`add_filter`, `add_action`)
-- Responsive design uses padding-bottom percentage technique for aspect ratios
-- Custom scrollbar styling is WebKit-specific
-- Admin settings are stored in WordPress options table as `vsg_settings`
-- Text domain: `vertical-scroll-gallery` for internationalization
+Test markup preservation, explicit grid override, option changes, legacy galleries,
+external images, metadata, captions, links, anchors, alignment and accessible names.
+Never modify or delete existing posts, pages, attachments or FileBird folders just
+for testing. Temporarily changed global layout settings must be restored afterward.
+Package only runtime files, retaining a single vertical-scroll-gallery/ root folder.
+Do not deploy GitHub source ZIPs without build assets or omit admin settings.
