@@ -1,0 +1,81 @@
+/* All overrides are scoped to opted-in galleries or editor-only previews. */
+.wp-block-gallery.vsg-gallery,
+.editor-styles-wrapper [data-vsg-mode="scroll"],
+.editor-styles-wrapper [data-vsg-mode="individual"] {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: var(--vsg-gap, 1rem);
+  box-sizing: border-box;
+}
+.wp-block-gallery.vsg-gallery figure.wp-block-image,
+.wp-block-gallery.vsg-gallery .blocks-gallery-item,
+.editor-styles-wrapper [data-vsg-mode="scroll"] figure.wp-block-image,
+.editor-styles-wrapper [data-vsg-mode="individual"] figure.wp-block-image {
+  width: 100% !important;
+  max-width: 100%;
+  height: auto !important;
+  flex: none;
+  margin: 0;
+  float: none;
+  box-sizing: border-box;
+}
+.wp-block-gallery.vsg-gallery figure.wp-block-image > div,
+.wp-block-gallery.vsg-gallery figure.wp-block-image > a {
+  width: 100%;
+  height: auto;
+}
+.wp-block-gallery.vsg-gallery img,
+.editor-styles-wrapper [data-vsg-mode="scroll"] img,
+.editor-styles-wrapper [data-vsg-mode="individual"] img {
+  display: block;
+  width: 100% !important;
+  max-width: 100%;
+  height: auto !important;
+  aspect-ratio: auto;
+  object-fit: contain !important;
+}
+.wp-block-gallery.vsg-gallery figcaption {
+  position: static !important;
+  width: 100%;
+  max-height: none !important;
+  box-sizing: border-box;
+  margin: 0;
+  padding: .5rem;
+  color: inherit;
+  background: none !important;
+  overflow: visible;
+}
+.wp-block-gallery.vsg-gallery .blocks-gallery-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: var(--vsg-gap, 1rem);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wp-block-gallery.vsg-list-view {
+  height: var(--vsg-height, clamp(22rem, 75vh, 50rem));
+  height: var(--vsg-height, clamp(22rem, 75svh, 50rem));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: .75rem;
+  border: 1px solid var(--vsg-border-color, #d9e2ec);
+  border-radius: .25rem;
+  scrollbar-width: thin;
+  scrollbar-color: #8b98a8 #f1f4f8;
+}
+.wp-block-gallery.vsg-list-view:focus-visible {
+  outline: 2px solid var(--vsg-focus-color, #2563eb);
+  outline-offset: 3px;
+}
+@media print {
+  .wp-block-gallery.vsg-list-view {
+    height: auto !important;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+  }
+}

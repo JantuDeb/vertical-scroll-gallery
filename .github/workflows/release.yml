@@ -1,0 +1,30 @@
+name: Build and Release
+on:
+  push:
+    branches: [master]
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - uses: actions/checkout@v4
+        with:
+          repository: WordPress/WordPress
+          ref: '6.5'
+          path: tests/wordpress
+      - run: npm test
+        env:
+          WP_CORE_DIR: ${{ github.workspace }}/tests/wordpress
+      - run: npm run package
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip
+          tag_name: build-${{ github.run_number }}
+          name: Build ${{ github.run_number }}
