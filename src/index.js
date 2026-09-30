@@ -35,7 +35,17 @@ addFilter('editor.BlockEdit', 'vertical-scroll-gallery/controls', (BlockEdit) =>
                         { label: __('Full-size vertical images', 'vertical-scroll-gallery'), value: 'individual' },
                         { label: __('WordPress gallery', 'vertical-scroll-gallery'), value: 'default' },
                     ]}
-                    onChange={(displayMode) => props.setAttributes({ displayMode })}
+                    onChange={(displayMode) => {
+                        const updates = { displayMode };
+                        if (displayMode === 'inherit') {
+                            // Remove only the legacy override so site defaults can apply.
+                            const classes = (props.attributes.className || '').split(/\s+/);
+                            updates.className = classes.filter((name) =>
+                                name && name !== 'is-style-vertical-scroll-gallery'
+                            ).join(' ') || undefined;
+                        }
+                        props.setAttributes(updates);
+                    }}
                     help={__('Choose WordPress gallery to keep the normal grid even when a site-wide override is enabled.', 'vertical-scroll-gallery')}
                 />
                 {mode !== 'default' && <Notice status="info" isDismissible={false}>
