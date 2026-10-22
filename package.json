@@ -1,6 +1,6 @@
 {
   "name": "vertical-scroll-gallery",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Adds a \"Vertical Scroll Image List\" variation to the core/gallery block with a vertically scrollable layout.",
   "main": "build/index.js",
   "scripts": {
